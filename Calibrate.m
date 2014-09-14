@@ -1,5 +1,5 @@
 % Background Calibration
-calib_skip = 15;
+calib_skip = 20;
 calib_iters = 30;
 for n=1:calib_skip
     frame = getdata(vid);
@@ -37,6 +37,7 @@ circles = (dist > 80);
 CC = bwconncomp(circles,8);
 numPixels = cellfun(@numel,CC.PixelIdxList);
 [~,I] = sort(numPixels);
+I = fliplr(I);
 
 centroids = regionprops(CC,'Centroid');
 centroids = cat(1,centroids.Centroid);
@@ -50,10 +51,14 @@ end
 homography = fitHomography(centroidsSort', projectorCentroids);
 
 fprintf('Projector calibrated.\n');
-set(h_display,'cdata',displayImage);
+
+homCentroids = applyHomography(centroidsSort',homography);
+hold on
+h_quality = scatter(homCentroids(1,:),homCentroids(2,:),'o','blue');
+hold off
+%set(h_display,'cdata',displayImage);
 
 % Wall Calibration
-preview(wallcam)
 for n=1:calib_skip
     frame = getdata(vid);
     wallFrame = getdata(wallcam);
@@ -74,7 +79,8 @@ for n=1:calib_iters
     flushdata(wallcam)
 end
 wallBoundary = round(wallBoundary / calib_iters);
-closepreview(wallcam)
+
 flushdata(vid)
 flushdata(wallcam)
 fprintf('Wall calibrated.\n')
+delete(h_quality)

@@ -1,7 +1,7 @@
 function [ x,y ] = detectFingerTip( CC )
 
 numPixels = cellfun(@numel, CC.PixelIdxList);
-large = find(numPixels > std(numPixels));
+large = find(numPixels > 2*std(numPixels));
 rightmost = zeros(1,length(large));
 for n=1:length(large)
     [~,X] = ind2sub(CC.ImageSize,CC.PixelIdxList{large(n)});
