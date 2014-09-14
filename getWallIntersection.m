@@ -7,4 +7,3 @@ function [ z ] = getWallIntersection( pointer )
     z = min(X);
 
 end
-

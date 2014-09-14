@@ -4,9 +4,11 @@ visualize = false;
 wallcam = videoinput(vidinfo.InstalledAdaptors{1},1);
 set(wallcam,'FramesPerTrigger',1);
 set(wallcam,'TriggerRepeat',Inf);
+set(wallcam,'ReturnedColorSpace','YCbCr');
 vid = videoinput(vidinfo.InstalledAdaptors{1},2);
 set(vid,'FramesPerTrigger',1);
 set(vid,'TriggerRepeat',Inf);
+set(vid,'ReturnedColorSpace','YCbCr');
 
 start(wallcam);
 start(vid)
@@ -33,8 +35,10 @@ else
     h_display = imshow(displayImage);
 end
 
-while true
-    wallFrame = rgb2ycbcr(getdata(wallcam));
+profile on
+
+while true    
+    wallFrame = getdata(wallcam);
     frame = getdata(vid);
     
     diff = (double(wallFrame) - double(backgroundWall)).^2;
@@ -45,7 +49,10 @@ while true
     diff = (double(frame) - double(background)).^2;
     dist = diff(:,:,3) + diff(:,:,2);
     person = (dist > 40);    
-    [x,y] = detectFingerTip(person);
+    CC = bwconncomp(person,8);    
+    [x,y] = detectFingerTip(CC);
+    density = computeDensity(CC,x,y)
+    
     if visualize
         wallDisplay = uint8(zeros(size(displayImage)));
         wallDisplay(z,:) = 128;
@@ -67,17 +74,10 @@ while true
         detections = detections .* strip;
         detections(max(y-5,1):min(y+5,720), max(x-5,1):min(x+5,1280)) = 256;
         set(h_pointer,'cdata',detections);
-%        density = computeDensity(person,x,y)
-%        if density < 0.33
-%            set(h_pointer,'cdata',detections);
-%       else
-%           set(h_pointer,'cdata',displayImage);
-%        end
     else
-        if z < wallBoundary
+        if z < wallBoundary && density < 0.33
             displayImage( max(y-2,1):min(y+2,size(displayImage,1)), max(x-2,1):min(x+2,size(displayImage,2)) ) = 256;
         end
-        density = computeDensity(person,x,y)
         set(h_display,'cdata',displayImage);
     end
         

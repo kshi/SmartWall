@@ -13,7 +13,7 @@ background = zeros(size(frame));
 backgroundWall = zeros(size(wallFrame));
 for n=1:calib_iters
     frame = getdata(vid);
-    wallFrame = rgb2ycbcr(getdata(wallcam));
+    wallFrame = getdata(wallcam);
     background = background + double(frame);
     backgroundWall = backgroundWall + double(wallFrame);
     flushdata(vid)
@@ -37,7 +37,7 @@ flushdata(vid)
 flushdata(wallcam)
 for n=1:calib_iters
     frame = getdata(vid);
-    wallFrame = rgb2ycbcr(getdata(wallcam));
+    wallFrame = getdata(wallcam);
     diff = (double(wallFrame) - double(backgroundWall)).^2;
     dist = diff(:,:,3) + diff(:,:,2);
     finger = (dist > 40);
