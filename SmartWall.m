@@ -42,7 +42,7 @@ Calibrate;
 %backgroundWall = imresize(backgroundWall,0.25,'bilinear');
 %wallBoundary = round(wallBoundary * 0.25) + 1;
 
-%last = [-1,-1];
+last = [NaN,NaN];
 
 while true    
     wallFrame = getdata(wallcam);
@@ -59,8 +59,15 @@ while true
     CC = bwconncomp(person,8);    
     [x,y] = detectFingerTip(CC);
     density = computeDensity(CC,x,y);
-        
+    
+    if z >= wallBoundary
+        status = strcat(num2str(wallBoundary - z), ' from wall');
+    else
+        status = 'touching wall'; 
+    end
+    
     if z < wallBoundary && density < 0.33
+        status = strcat(status, ', detecting fingertip at [',num2str(x),',',num2str(y),']');
         Z = applyHomography([x;y],homography);
         x = round(Z(1));
         y = round(Z(2));
