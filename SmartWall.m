@@ -1,5 +1,4 @@
 vidinfo = imaqhwinfo;
-visualize = false;
 
 wallcam = videoinput(vidinfo.InstalledAdaptors{1},1);
 set(wallcam,'FramesPerTrigger',1);
@@ -18,24 +17,32 @@ backgroundWall = [];
 wallBoundary = 0;
 homography = [];
 
+displayImage = uint8(zeros(600,800));
+[X,Y] = meshgrid(1:size(displayImage,2),1:size(displayImage,1));
+calibrationPattern = uint8(zeros(size(displayImage,1),size(displayImage,2),3));
+slice = uint8(zeros(size(displayImage)));
+projectorCentroids = [];
+
+for x=-2:2
+    for y=-2:2        
+        centerX = size(displayImage,2) / 2 + x*100;
+        centerY = size(displayImage,1) / 2 + y*100;        
+        slice( (X - centerX).^2 + (Y - centerY).^2 < 1600 ) = 255;
+        projectorCentroids = [projectorCentroids, [centerX; centerY]];
+    end
+end
+calibrationPattern(:,:,1) = slice;
+
+h_display = image(displayImage);
+set(h_display,'ButtonDownFcn','displayImage = uint8(zeros(600,800));');
+colormap('gray');
+
 Calibrate;
 
 %backgroundWall = imresize(backgroundWall,0.25,'bilinear');
 %wallBoundary = round(wallBoundary * 0.25) + 1;
 
-displayImage = uint8(zeros(size(background,1),size(background,2)));
-
-figure(1)
-if visualize
-    subplot(121)
-    h_pointer = imshow(displayImage);
-    subplot(122)
-    h_wall = imshow(displayImage);
-else
-    h_display = imshow(displayImage);
-end
-
-profile on
+%last = [-1,-1];
 
 while true    
     wallFrame = getdata(wallcam);
@@ -51,38 +58,25 @@ while true
     person = (dist > 40);    
     CC = bwconncomp(person,8);    
     [x,y] = detectFingerTip(CC);
-    density = computeDensity(CC,x,y)
-    
-    if visualize
-        wallDisplay = uint8(zeros(size(displayImage)));
-        wallDisplay(z,:) = 128;
-        wallDisplay(wallBoundary,:) = 256;
-        set(h_wall,'cdata',wallDisplay);
-        if z < wallBoundary
-            title('contact')
-        else
-            title('')
-        end
+    density = computeDensity(CC,x,y);
         
-        CC = bwconncomp(person,8);
-        numPixels = cellfun(@numel, CC.PixelIdxList);
-        [~,idx] = max(numPixels);
-        strip = uint8(zeros(CC.ImageSize));
-        strip(:, max(x-100,1):x) = 8;
-        detections = uint8(zeros(CC.ImageSize));
-        detections(CC.PixelIdxList{idx}) = 8;
-        detections = detections .* strip;
-        detections(max(y-5,1):min(y+5,720), max(x-5,1):min(x+5,1280)) = 256;
-        set(h_pointer,'cdata',detections);
-    else
-        if z < wallBoundary && density < 0.33
-            displayImage( max(y-2,1):min(y+2,size(displayImage,1)), max(x-2,1):min(x+2,size(displayImage,2)) ) = 256;
-        end
-        set(h_display,'cdata',displayImage);
+    if z < wallBoundary && density < 0.33
+        Z = applyHomography([x;y],homography);
+        x = round(Z(1));
+        y = round(Z(2));
+        displayImage( max(y-2,1):min(y+2,size(displayImage,1)), max(x-2,1):min(x+2,size(displayImage,2)) ) = 256;
+%         if (last(1) > 0)
+%             
+%             alpha=repmat([0.1:0.1:0.9],2,1);
+%             interpolants = round(bsxfun(@times,[x;y],alpha) + bsxfun(@times,[last(1);last(2)],1-alpha));
+%             
+%         end
+%         last = [x,y];
     end
+    set(h_display,'cdata',displayImage);
         
     flushdata(vid)
-    flushdata(wallcam)
+    flushdata(wallcam)        
     
 end
 

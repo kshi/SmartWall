@@ -1,9 +1,14 @@
 function [ x,y ] = detectFingerTip( CC )
 
-%CC = bwconncomp(person,8);
 numPixels = cellfun(@numel, CC.PixelIdxList);
-[~,idx] = max(numPixels);
-[Y,X] = ind2sub(CC.ImageSize,CC.PixelIdxList{idx});
+large = find(numPixels > std(numPixels));
+rightmost = zeros(1,length(large));
+for n=1:length(large)
+    [~,X] = ind2sub(CC.ImageSize,CC.PixelIdxList{large(n)});
+    rightmost(n) = max(X);
+end
+[~,idx] = max(rightmost);
+[Y,X] = ind2sub(CC.ImageSize,CC.PixelIdxList{large(idx)});
 
 [~,RHS] = max(X);
 
@@ -16,4 +21,3 @@ y = Y(pointId);
 x = X(pointId);
         
 end
-
