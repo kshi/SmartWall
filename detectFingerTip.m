@@ -1,6 +1,6 @@
-function [ x,y ] = detectFingerTip( person )
+function [ x,y ] = detectFingerTip( CC )
 
-CC = bwconncomp(person,8);
+%CC = bwconncomp(person,8);
 numPixels = cellfun(@numel, CC.PixelIdxList);
 [~,idx] = max(numPixels);
 [Y,X] = ind2sub(CC.ImageSize,CC.PixelIdxList{idx});
