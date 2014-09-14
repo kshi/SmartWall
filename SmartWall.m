@@ -64,14 +64,20 @@ while true
         Z = applyHomography([x;y],homography);
         x = round(Z(1));
         y = round(Z(2));
-        displayImage( max(y-2,1):min(y+2,size(displayImage,1)), max(x-2,1):min(x+2,size(displayImage,2)) ) = 256;
-%         if (last(1) > 0)
-%             
-%             alpha=repmat([0.1:0.1:0.9],2,1);
-%             interpolants = round(bsxfun(@times,[x;y],alpha) + bsxfun(@times,[last(1);last(2)],1-alpha));
-%             
-%         end
-%         last = [x,y];
+        displayImage( max(y-2,1):min(y+2,size(displayImage,1)), max(x-2,1):min(x+2,size(displayImage,2)) ) = 255;
+        if ~isnan(last(1))
+            
+            alpha=repmat([0.1:0.02:0.9],2,1);
+            interpolants = round(bsxfun(@times,[x;y],alpha) + bsxfun(@times,[last(1);last(2)],1-alpha));
+            pixelInds = sub2ind(size(displayImage),interpolants(1,:),interpolants(2,:));
+            newPixels = uint8(zeros(size(displayImage)));
+            newPixels(pixelInds) = 255;
+            newPixels = imdilate(newPixels,[0,1,1,0;1,1,1,1;1,1,1,1;0,1,1,0]);
+            
+        end
+        last = [x,y];
+    else
+        last = [NaN, NaN];
     end
     set(h_display,'cdata',displayImage);
         
