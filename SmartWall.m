@@ -1,14 +1,14 @@
 vidinfo = imaqhwinfo;
-visualize = true;
+visualize = false;
 
-wallcam = videoinput(vidinfo.InstalledAdaptors{1},2);
+wallcam = videoinput(vidinfo.InstalledAdaptors{1},1);
 set(wallcam,'FramesPerTrigger',1);
-start(wallcam);
-
-vid = videoinput(vidinfo.InstalledAdaptors{1},1);
+set(wallcam,'TriggerRepeat',Inf);
+vid = videoinput(vidinfo.InstalledAdaptors{1},2);
 set(vid,'FramesPerTrigger',1);
 set(vid,'TriggerRepeat',Inf);
 
+start(wallcam);
 start(vid)
 
 background = [];
@@ -18,48 +18,68 @@ homography = [];
 
 Calibrate;
 
-displayImage = uint8(zeros(size(background,2),size(background,1)));
+%backgroundWall = imresize(backgroundWall,0.25,'bilinear');
+%wallBoundary = round(wallBoundary * 0.25) + 1;
 
+displayImage = uint8(zeros(size(background,1),size(background,2)));
+
+figure(1)
 if visualize
-    figure(1)
     subplot(121)
-    h_pointer = displayImage;
+    h_pointer = imshow(displayImage);
     subplot(122)
-    h_wall = displayImage;
+    h_wall = imshow(displayImage);
 else
-    figure(1)
-    h_display = displayImage;
+    h_display = imshow(displayImage);
 end
 
 while true
-    wallFrame = getdata(wallcam);
+    wallFrame = rgb2ycbcr(getdata(wallcam));
+    frame = getdata(vid);
     
     diff = (double(wallFrame) - double(backgroundWall)).^2;
-    dist = diff(:,:,3) + dist(:,:,2) + diff(:,:,1)*0.2;
+    dist = diff(:,:,3) + diff(:,:,2);
     pointer = (dist > 40);
-    [t,z] = detectFingerTip(person,'down');
+    z = getWallIntersection(pointer);
+
+    diff = (double(frame) - double(background)).^2;
+    dist = diff(:,:,3) + diff(:,:,2);
+    person = (dist > 40);    
+    [x,y] = detectFingerTip(person);
     if visualize
         wallDisplay = uint8(zeros(size(displayImage)));
-        drawDisplayBox(wallDisplay,t,z);
-        wallDisplay(z,:) = 256;
+        wallDisplay(z,:) = 128;
+        wallDisplay(wallBoundary,:) = 256;
         set(h_wall,'cdata',wallDisplay);
-    end
-    frame = getdata(vid);
-    diff = (double(frame) - double(background)).^2;
-    dist = diff(:,:,3) + diff(:,:,2) + diff(:,:,1) * 0.2;      
-    person = (dist > 40);    
-    [x,y] = detectFingerTip(person,'right');
-    if visualize
-        trackDisplay = uint8(zeros(size(displayImage)));
-        drawDisplayBox(trackDisplay,x,y);
-        set(h_pointer,'cdata',trackDisplay);
-        computeDensity(person,x,y);    
-    end
-    if density > 0.33
-        %erase
+        if z < wallBoundary
+            title('contact')
+        else
+            title('')
+        end
+        
+        CC = bwconncomp(person,8);
+        numPixels = cellfun(@numel, CC.PixelIdxList);
+        [~,idx] = max(numPixels);
+        strip = uint8(zeros(CC.ImageSize));
+        strip(:, max(x-100,1):x) = 8;
+        detections = uint8(zeros(CC.ImageSize));
+        detections(CC.PixelIdxList{idx}) = 8;
+        detections = detections .* strip;
+        detections(max(y-5,1):min(y+5,720), max(x-5,1):min(x+5,1280)) = 256;
+        set(h_pointer,'cdata',detections);
+%        density = computeDensity(person,x,y)
+%        if density < 0.33
+%            set(h_pointer,'cdata',detections);
+%       else
+%           set(h_pointer,'cdata',displayImage);
+%        end
     else
-        %draw
-    end        
+        if z < wallBoundary
+            displayImage( max(y-2,1):min(y+2,size(displayImage,1)), max(x-2,1):min(x+2,size(displayImage,2)) ) = 256;
+        end
+        density = computeDensity(person,x,y)
+        set(h_display,'cdata',displayImage);
+    end
         
     flushdata(vid)
     flushdata(wallcam)

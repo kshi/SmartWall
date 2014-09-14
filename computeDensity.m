@@ -1,6 +1,8 @@
 function [ density ] = computeDensity( person, x, y )
 
 CC = bwconncomp(person,8);
+numPixels = cellfun(@numel,CC.PixelIdxList);
+[~,idx] = max(numPixels);
 strip = uint8(zeros(CC.ImageSize));
 strip(:, max(x-100,1):x) = 8;
 detections = uint8(zeros(CC.ImageSize));
