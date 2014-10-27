@@ -55,7 +55,7 @@ while true
 
     diff = (double(frame) - double(background)).^2;
     dist = diff(:,:,3) + diff(:,:,2);
-    person = (dist > 60);    
+    person = (dist > 50);    
     CC = bwconncomp(person,8);    
     [x,y] = detectFingerTip(CC);
     %density = computeDensity(CC,x,y);

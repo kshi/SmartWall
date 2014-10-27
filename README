@@ -1,0 +1,15 @@
+SmartWall - turn an ordinary wall into a SmartWall! PennApps fall 2014 top 20.
+
+This Matlab hack allows you to use two webcams and a projector to draw on a wall using just your finger. 
+
+Video: https://www.youtube.com/watch?v=BCYRZlXZYBI
+
+Setup: point one webcam directly at the wall, typically this will be the standard webcam mounted on a laptop. Mount a second webcam on the wall so that the wall is the horizon from its viewpoint. These two cameras track the location of a person's finger. 
+
+Calibration procedure: do not standard in front of either camera until the small blue circles appear inside the grid of red circles. Then, place your finger touching the wall until the pattern disappears. 
+
+Usage: stand to the left of the projector display and only extend one finger from your hand. Make sure it is clearly extended away from the hand and visible to the webcams.
+
+Team members: 
+Kevin Shi (Columbia University, PhD student in Computer Science)
+Justin Yim (University of Pennsylvania, MS student in Robotics)
